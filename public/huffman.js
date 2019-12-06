@@ -1,3 +1,7 @@
+const fs = require('fs');
+const { promisify } = require('util');
+const writeFile = promisify(fs.writeFileSync);
+
 function BinaryHeap(scoreFunction){
     this.content = [];
     this.scoreFunction = scoreFunction;
@@ -181,10 +185,58 @@ console.log(s)
 var huff = new HuffmanEncoding(s)
 huff.inspect_encoding()
 
-var e = huff.encoded_string
-console.log(e)
+var e = huff.encoded_string;
 
+console.log(e[0] + ' eh do tipo ' + typeof(e[0]) + ' e tem tamanho ' + e.length)
+let tam = Math.ceil(e.length/8); // tamanho do array de 8 bits vai ser o teto do tamanho da string gerada pelo codigo de huffman
+
+var buffer = new Uint8Array(tam+1); // array de inteiros de 8 bits cada em javascript
+
+function readBit(buffer, i, bit){ // funcao para ler um determinado bit do array de inteiros
+  return (buffer[i] >> bit) % 2;
+}
+
+function setBit(buffer, i, bit, value){ // funcao para escrever um determinado bit no array de inteiros
+  if(value == 0){
+    buffer[i] &= ~(1 << bit);
+  }else{
+    buffer[i] |= (1 << bit);
+  }
+}
+buffer[tam] = e.length; //informacao do tamanho da string
+var bitCount = 0;
+var byteCount = 0;
+
+e.split('').forEach(function(value) {
+  if(bitCount == 8){
+    byteCount += 1;
+    bitCount = 0;
+  }
+  console.log('inserindo ' + value + ' no byte ' + byteCount + ' e no bit ' + bitCount);
+  setBit(buffer,byteCount,bitCount,Number(value));
+  bitCount += 1;
+});
+console.log('string do codigo: ' + e);
+
+writeFile('./lol.txt', buffer, {encoding: null});
+var contents = fs.readFileSync('./lol.txt');
+console.log(contents);
+var buffer2 = new Uint8Array(contents);
+stringLength = Number(buffer2[buffer2.byteLength-1]);
+
+var bitCount = 0;
+var byteCount = 0;
+stringDoArquivo = '';
+for(let i =0; i < stringLength; i++){
+  if(bitCount == 8){
+    byteCount += 1;
+    bitCount = 0;
+  }
+  stringDoArquivo += readBit(buffer2,byteCount,bitCount);
+  bitCount += 1;
+}
+console.log('string do arquivo: ' + stringDoArquivo);
 var t = huff.decode(e)
 console.log(t)
-
-console.log("String decodificada é igual a String original?",(s == t))
+console.log("String decodificada é igual a String original?",(s == t));
+console.log("String decodificada do arquivo é igual a String codificada antes do arquivo?",(stringDoArquivo == e));
