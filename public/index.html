@@ -46,14 +46,6 @@
                 console.log(lol);
               });
               const audioBlob = new Blob(audioChunks);
-              audioBlob.arrayBuffer().then(buffer => { 
-                let dataView = new DataView(buffer);
-                console.log(buffer);
-                for(let i = 0; i <=dataView.byteLength-1; i++){
-                  console.log(dataView.getUint8(i));
-                }
-              });
-
               const audioUrl = URL.createObjectURL(audioBlob);
               const audio = new Audio(audioUrl);
               const play = () => audio.play();
@@ -109,19 +101,27 @@
     });
 
     saveButton.addEventListener('click', () => {
+      var audioArrayBuffer = [];
       console.log(audio);
       const reader = new FileReader();
       reader.readAsDataURL(audio.audioBlob);
-      reader.onload = () => {
+      reader.onload = async () => {
         const base64AudioMessage = reader.result.split(',')[1];
-
+        await audio.audioBlob.arrayBuffer().then(buffer => {
+          let dataView = new DataView(buffer);
+          console.log(buffer);
+          for (let i = 0; i <= dataView.byteLength - 1; i++) {
+            audioArrayBuffer.push(dataView.getUint8(i));
+          }
+        });
         fetch('/messages', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            message: base64AudioMessage
+            message: base64AudioMessage,
+            audioArrayBuffer: audioArrayBuffer
           })
         }).then(res => {
           if (res.status === 201) {
@@ -137,7 +137,6 @@
         if (res.status === 200) {
           return res.json().then(json => {
             json.messageFilenames.forEach(filename => {
-              console.log(filename);
               let audioElement = document.querySelector(`[data-audio-filename="${filename}"]`);
               if (!audioElement) {
                 audioElement = document.createElement('audio');
@@ -152,8 +151,18 @@
         console.log('Invalid status getting messages: ' + res.status);
       });
     };
+    const populateAudioCoded = () => {
+      return fetch('/getAudio').then(res =>{
+        if(res.status === 200){
+          res.json().then(json =>{
+            console.log(json)
+          })
+        }  
+      })
+    }
 
     populateAudioMessages();
+    populateAudioCoded();
   </script>
 </body>
 

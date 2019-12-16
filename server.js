@@ -3,6 +3,8 @@ const fs = require('fs');
 const { promisify } = require('util');
 const { v4 } = require('uuid');
 
+const huffman = require('./public/huffman.js')
+
 const writeFile = promisify(fs.writeFile);
 const readdir = promisify(fs.readdir);
 
@@ -13,9 +15,9 @@ if (!fs.existsSync(messageFolder)) {
 }
 
 const app = express();
-
 app.use(express.static('public'));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb' }));
 
 app.get('/messages', (req, res) => {
   readdir(messageFolder)
@@ -27,8 +29,15 @@ app.get('/messages', (req, res) => {
       res.sendStatus(500);
     });
 });
-
+app.get('/getAudio', (req,res) =>{
+  let buffer = huffman.readAudioFile();
+  console.log(buffer);
+  res.status(200).json({bf: buffer});
+})
 app.post('/messages', (req, res) => {
+  if(req.body.audioArrayBuffer){
+    huffman.writeAudioFile(req.body.audioArrayBuffer);
+  }
   if (!req.body.message) {
     return res.status(400).json({ error: 'No req.body.message' });
   }
