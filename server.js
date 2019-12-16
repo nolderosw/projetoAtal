@@ -31,10 +31,9 @@ app.get('/messages', (req, res) => {
 });
 app.get('/getAudio', (req,res) =>{
   let buffer = huffman.readAudioFile();
-  console.log(buffer);
   res.status(200).json({bf: buffer});
 })
-app.post('/messages', (req, res) => {
+app.post('/messages', async (req, res) => {
   if(req.body.audioArrayBuffer){
     huffman.writeAudioFile(req.body.audioArrayBuffer);
   }
