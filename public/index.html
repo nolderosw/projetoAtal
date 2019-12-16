@@ -19,6 +19,10 @@
 
   <div id="saved-audio-messages">
     <h2>Saved messages</h2>
+    <audio controls="controls" id="audio">
+      Your browser does not support the &lt;audio&gt; tag. 
+      <source id="source" src=""/>
+    </audio>
   </div>
 
   <script>
@@ -102,17 +106,17 @@
 
     saveButton.addEventListener('click', () => {
       var audioArrayBuffer = [];
-      console.log(audio);
       const reader = new FileReader();
       reader.readAsDataURL(audio.audioBlob);
       reader.onload = async () => {
         const base64AudioMessage = reader.result.split(',')[1];
         await audio.audioBlob.arrayBuffer().then(buffer => {
           let dataView = new DataView(buffer);
-          console.log(buffer);
+          console.log("data: "+ dataView.byteLength);
           for (let i = 0; i <= dataView.byteLength - 1; i++) {
             audioArrayBuffer.push(dataView.getUint8(i));
           }
+          console.log(audioArrayBuffer.length);
         });
         fetch('/messages', {
           method: 'POST',
@@ -155,13 +159,20 @@
       return fetch('/getAudio').then(res =>{
         if(res.status === 200){
           res.json().then(json =>{
-            console.log(json)
+
+            const blob = new Blob([new Uint8Array(json.bf)]);
+            console.log(blob);
+            const url = URL.createObjectURL(blob);
+            const audio = document.getElementById('audio');
+            const source = document.getElementById('source');
+            source.src = url;
+            audio.load();
           })
         }  
       })
     }
 
-    populateAudioMessages();
+    //populateAudioMessages();
     populateAudioCoded();
   </script>
 </body>
