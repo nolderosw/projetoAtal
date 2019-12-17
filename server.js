@@ -1,47 +1,22 @@
 const express = require('express');
-const fs = require('fs');
-const { promisify } = require('util');
-const { v4 } = require('uuid');
-
 const huffman = require('./public/huffman.js')
-
-const writeFile = promisify(fs.writeFile);
-const readdir = promisify(fs.readdir);
-
-// make sure messages folder exists
-const messageFolder = './public/messages/';
-if (!fs.existsSync(messageFolder)) {
-  fs.mkdirSync(messageFolder);
-}
 
 const app = express();
 app.use(express.static('public'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb' }));
 
-app.get('/messages', (req, res) => {
-  readdir(messageFolder)
-    .then(messageFilenames => {
-      res.status(200).json({ messageFilenames });
-    })
-    .catch(err => {
-      console.log('Error reading message directory', err);
-      res.sendStatus(500);
-    });
-});
 app.get('/getAudio', (req,res) =>{
   let buffer = huffman.readAudioFile();
   res.status(200).json({bf: buffer});
 })
+
 app.post('/messages', async (req, res) => {
-  if(req.body.audioArrayBuffer){
-    huffman.writeAudioFile(req.body.audioArrayBuffer);
-  }
-  if (!req.body.message) {
+  if (!req.body.audioArrayBuffer) {
     return res.status(400).json({ error: 'No req.body.message' });
   }
-  const messageId = v4();
-  writeFile(messageFolder + messageId, req.body.message, 'base64')
+  else{
+    huffman.writeAudioFile(req.body.audioArrayBuffer)
     .then(() => {
       res.status(201).json({ message: 'Saved message' });
     })
@@ -49,6 +24,7 @@ app.post('/messages', async (req, res) => {
       console.log('Error writing message to file', err);
       res.sendStatus(500);
     });
+  }
 });
 
 const PORT = process.env.PORT || 3545;
