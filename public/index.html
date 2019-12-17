@@ -2,7 +2,7 @@
 <html>
 
 <head>
-  <title>Record and save audio</title>
+  <title>Huffman - IFPB - RUAN s2</title>
   <style>
     audio {
       display: block;
@@ -112,11 +112,9 @@
         const base64AudioMessage = reader.result.split(',')[1];
         await audio.audioBlob.arrayBuffer().then(buffer => {
           let dataView = new DataView(buffer);
-          console.log("data: "+ dataView.byteLength);
           for (let i = 0; i <= dataView.byteLength - 1; i++) {
             audioArrayBuffer.push(dataView.getUint8(i));
           }
-          console.log(audioArrayBuffer.length);
         });
         fetch('/messages', {
           method: 'POST',
@@ -129,39 +127,18 @@
           })
         }).then(res => {
           if (res.status === 201) {
-            return populateAudioMessages();
+            return populateAudioCoded();
           }
           console.log('Invalid status saving audio message: ' + res.status);
         });
       };
     });
-
-    const populateAudioMessages = () => {
-      return fetch('/messages').then(res => {
-        if (res.status === 200) {
-          return res.json().then(json => {
-            json.messageFilenames.forEach(filename => {
-              let audioElement = document.querySelector(`[data-audio-filename="${filename}"]`);
-              if (!audioElement) {
-                audioElement = document.createElement('audio');
-                audioElement.src = `/messages/${filename}`;
-                audioElement.setAttribute('data-audio-filename', filename);
-                audioElement.setAttribute('controls', true);
-                savedAudioMessagesContainer.appendChild(audioElement);
-              }
-            });
-          });
-        }
-        console.log('Invalid status getting messages: ' + res.status);
-      });
-    };
     const populateAudioCoded = () => {
       return fetch('/getAudio').then(res =>{
         if(res.status === 200){
           res.json().then(json =>{
 
             const blob = new Blob([new Uint8Array(json.bf)]);
-            console.log(blob);
             const url = URL.createObjectURL(blob);
             const audio = document.getElementById('audio');
             const source = document.getElementById('source');
@@ -171,8 +148,6 @@
         }  
       })
     }
-
-    //populateAudioMessages();
     populateAudioCoded();
   </script>
 </body>
